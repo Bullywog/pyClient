@@ -24,20 +24,20 @@ def parse_arguments():#set up parsing of arguments for required arguements
 
 
 def connecttoserver(hostname):
-    sockettouse.connect(hostname, 0)
+    sockettouse.connect(hostname, 12345)
     return sockettouse
 
 
 
 def sendPrompt(prompt,sslsocket):
     tosend = prompt.encode('utf-8')#build prompt to be sent.
-    sslsocket.send(tosend)
-    data = sslsocket.recv(1024)
-    if data==tosend:return True;
+    sslsocket.send(tosend)#send prompt over ssl
+    data = sslsocket.recv(1024)#receive response
+    if data==tosend:return True;#if prompt accepted then mirror of prompt returned
     else: return False
 
 def addFile(filename, sslsocket):
-    if sendPrompt('-a',sslsocket)==True: #send the prompt, check if it is received
+    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt, check if it is received
         
     #filetosend = open(filename, 'rb') #open the file to send
     #size = os.path.getsize(filename) #determine size of the file
@@ -51,19 +51,19 @@ def addFile(filename, sslsocket):
     return 0 #return server acknoledgement
 
 def fetchFile(filename, sslsocket):
-    sendPrompt('-f',sslsocket) #send the prompt to the server
+    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt to the server
     return 0
 
 def listFiles(sslsocket):
-    sendPrompt('-l',sslsocket) #send the prompt to the server
+    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt to the server
     return 0
 
 def uploadCertificate(certificatename, sslsocket):
-    sendPrompt('-u',sslsocket) #send the prompt to the server
+    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt to the server
     return 0
 
 def verifyCertificate(signature, sslsocket):
-    if(sendPrompt('-v',sslsocket)==true):return 0
+    if sendPrompt('-a',sslsocket)==True: return 1
 
     #send the prompt to the server
     return 0
