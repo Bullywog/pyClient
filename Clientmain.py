@@ -7,9 +7,10 @@ import os
 sockettouse = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
 
+
 def parse_arguments():#set up parsing of arguments for required arguements
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', nargs=1, type = str)
+    parser.add_argument('-a', nargs=1, type =str )
     parser.add_argument('-c', nargs=1)
     parser.add_argument('-f', nargs=1)
     parser.add_argument('-ho', nargs=1)
@@ -33,29 +34,51 @@ def sendPrompt(prompt,sslsocket):
     tosend = prompt.encode('utf-8')#build prompt to be sent.
     sslsocket.send(tosend)#send prompt over ssl
     data = sslsocket.recv(1024)#receive response
+
     if data==tosend:return True;#if prompt accepted then mirror of prompt returned
     else: return False
 
+
 def addFile(filename, sslsocket):
-    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt, check if it is received
+    print(filename)
+    if os.path.isfile(filename)==False: 
+        return print("File not uploaded. File not found")
+    
+    if sendPrompt('-a',sslsocket)==False:  #send the prompt, check if it is received
+        return print("File not uploaded. Prompt not received correctly")
+    size = os.path.getsize(filename) #determine size of the file
+    if sendPrompt(size,sslsocket)==False:#send a file size prompt to the server
+        return print("File not uploaded. Size Prompt not received correctly")
+    if sendPrompt(filename,sslsocket)==False:
+        return print("File not uploaded. Filename prompt not received correctly")
+                   
+    filetosend = open(filename, 'rb') #open the file to send
+    sendbuffer = filetosend.read(1024) #read file into buffer
+    while(sendbuffer):#while something gets read
+        sent = sslsocket.send(sendbuffer)#send over sslsocket
+        print('Bytes Sent' + str(sent))#report bytes sent
+        sendbuffer = filetosend.read(1024)#read the next part of file to send
+
+    #here should wait for a server acknowledgement that transfer is complete
         
-    #filetosend = open(filename, 'rb') #open the file to send
-    #size = os.path.getsize(filename) #determine size of the file
-    #sslsocket.send('siz:'+size) #send server the expected size of the file in order for server to loop through until its received all
-    #l = filetosend.read(1024) #read first chunk of bytes from file
-    #while(l):#send bytes until none
-    #    sslsocket.send(l)#send bytes to socket
-     #   l = filetosend.read(1024)#read next part of file
-    #result = sslsocket.recv(4)#receive acknowledgement from server
+
+
 
     return 0 #return server acknoledgement
 
-def fetchFile(filename, sslsocket):
-    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt to the server
-    return 0
+def fetchFile(filename,trustlength,trustedperson, sslsocket):
+    if sendPrompt('-f',sslsocket)==False: 
+        return print("File not downloaded prompt for fetch not processed correctly")#send the prompt to the server
+    if sendPrompt(filename, sslsocket)==False:#sending server the filename, return of prompt indicates it exists
+        return print("File not dowloaded filename not received or file not found")
+    if sendPrompt(trustlength, sslsocket)==False:#sending the length of chain required to trust a file
+        return print("Trust length prompt not received")
+    if sendPrompt(trustedperson, sslsocket)==False:#sending the required person to be present in the chain
+        return("Trusted person prompt not found or file not trusted.")
+
 
 def listFiles(sslsocket):
-    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt to the server
+    if sendPrompt('-l',sslsocket)==True: return 1 #send the prompt to the server
     return 0
 
 def uploadCertificate(certificatename, sslsocket):
@@ -83,7 +106,7 @@ def main():
     sslsock.connect(('localhost', 12345))
     data = sslsock.recv(1024)
     print(data)
-    if arguments.a is not None: addFile(str(arguments.a), sslsock)
+    if arguments.a is not None: addFile(arguments.a[0], sslsock)
     #if arguments.f is not None: fetchFile(arguments.f,sslsock)
     #if arguments.l is not None: listFiles(sslsock)
     #if arguments.u is not None: uploadCertificate(arguments.u,sslsock)
