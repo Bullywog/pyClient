@@ -3,6 +3,7 @@ import argparse
 import socket
 import ssl
 import os
+import time
 
 sockettouse = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
@@ -47,8 +48,8 @@ def addFile(filename, sslsocket):
     if sendPrompt('-a',sslsocket)==False:  #send the prompt, check if it is received
         return print("File not uploaded. Prompt not received correctly")
     size = os.path.getsize(filename) #determine size of the file
-    if sendPrompt(size,sslsocket)==False:#send a file size prompt to the server
-        return print("File not uploaded. Size Prompt not received correctly")
+    if sendPrompt(str(size),sslsocket)==False:#send a file size prompt to the server
+       return print("File not uploaded. Size Prompt not received correctly")
     if sendPrompt(filename,sslsocket)==False:
         return print("File not uploaded. Filename prompt not received correctly")
                    
@@ -61,8 +62,6 @@ def addFile(filename, sslsocket):
 
     #here should wait for a server acknowledgement that transfer is complete
         
-
-
 
     return 0 #return server acknoledgement
 
