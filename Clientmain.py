@@ -129,7 +129,7 @@ def uploadCertificate(certificatename, sslsocket):
         sendbuffer = certtosend.read(1024)#read the next part of certificate to send
     return 0
 
-def verifyCertificate(signature, sslsocket):
+def verifyFile(signature, sslsocket):
     if sendPrompt('-a',sslsocket)==True: return 1
 
     #send the prompt to the server
@@ -154,7 +154,7 @@ def main():
     if arguments.f is not None: fetchFile(arguments.f[0],arguments.c[0],arguments.n[0],sslsock)
     if arguments.l is not None: listFiles(sslsock)
     if arguments.u is not None: uploadCertificate(arguments.u[0],sslsock)
-    #if arguments.v is not None: verifyCertificate(arguments.v,sslsock)
+    #if arguments.v is not None: verifyFile(arguments.v,sslsock)
     sslsock.close()
 
 
