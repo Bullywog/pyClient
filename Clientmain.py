@@ -76,13 +76,57 @@ def fetchFile(filename,trustlength,trustedperson, sslsocket):
     if sendPrompt(trustedperson, sslsocket)==False:#sending the required person to be present in the chain
         return("Trusted person prompt not found or file not trusted.")
 
+    sizeprompt = sslsocket.recv(1024)   #receive size of file that will be received
+    recievedfile = open(filename, 'wb') #create file on in root folder with specified name, prepared to be written to
+    size = sizeprompt.from_bytes(len(sizeprompt), 'little') #convert size of file from byte array to int
+    amountreceived = 0  #Variable for tracking how much has been received through the socket.
+    receiveddata = sslsocket.recv(1024) #Receive first chunck of data from socket
+    while amountreceived < size: #While all expected data of file has not been received keep looking for more
+        recievedfile.write(receiveddata)
+        amountreceived+=receiveddata.len
+        receiveddata=socket.recv(1024)
+    sendprompt('complete',sslsocket)
+    return 0
+
+
 
 def listFiles(sslsocket):
     if sendPrompt('-l',sslsocket)==True: return 1 #send the prompt to the server
+    sizeprompt = sslsocket.recv(1024) 
+    size = sizeprompt.from_bytes(len(sizeprompt), 'little')
+    receivedstring = [] #byte array where string will be copied to
+    amountreceived = 0 #Track amount received from socket
+    receiveddata = sslsocket.recv(1024) #Receive first part of data
+    while amountreceived < size: #Receive until all expected data it received
+        receivedstring.append(receiveddata) #Add received bytes to array
+        amountreceived+=receiveddata.len #Update amount received
+        receiveddata = sslsocket.recv(1024)
+    sendprompt('complete', sslsocket) #Inform server that process is complete
+    listoffiles=receivedstring.decode('utf-8', 'strict') #Decode the received btye array into a usable string
+    listitems = listoffiles.split(':') #Split string into list of different server files
+    print('List of Items on Server with Protection') 
+    for listitem in listitems:
+        print(listitem) #Print list of items
     return 0
 
 def uploadCertificate(certificatename, sslsocket):
-    if sendPrompt('-a',sslsocket)==True: return 1 #send the prompt to the server
+    if sendPrompt('-u',sslsocket)==False:
+        return print('Certificate not upleaded Send Prompt Not Received Correctly')
+        
+    if os.path.isfile(certificatename)==False: 
+        return print("Certificate not uploaded. Certificate not found")
+    size = os.path.getsize(filename) #determine size of the file
+    if sendPrompt(size,sslsocket)==False:#send a file size prompt to the server
+        return print("Certificate not uploaded. Size Prompt not received correctly")
+    if sendPrompt(certificatename,sslsocket)==False:
+        return print("Certificate not uploaded. Filename prompt not received correctly or certificate already exists")
+                   
+    certtosend = open(certificatename, 'rb') #open the file to send
+    sendbuffer = certtosend.read(1024) #read file into buffer
+    while(sendbuffer):#while something gets read
+        sent = sslsocket.send(sendbuffer)#send over sslsocket
+        print('Bytes Sent' + str(sent))#report bytes sent
+        sendbuffer = certtosend.read(1024)#read the next part of certificate to send
     return 0
 
 def verifyCertificate(signature, sslsocket):
@@ -107,9 +151,9 @@ def main():
     data = sslsock.recv(1024)
     print(data)
     if arguments.a is not None: addFile(arguments.a[0], sslsock)
-    #if arguments.f is not None: fetchFile(arguments.f,sslsock)
-    #if arguments.l is not None: listFiles(sslsock)
-    #if arguments.u is not None: uploadCertificate(arguments.u,sslsock)
+    if arguments.f is not None: fetchFile(arguments.f[0],arguments.c[0],arguments.n[0],sslsock)
+    if arguments.l is not None: listFiles(sslsock)
+    if arguments.u is not None: uploadCertificate(arguments.u[0],sslsock)
     #if arguments.v is not None: verifyCertificate(arguments.v,sslsock)
     sslsock.close()
 
