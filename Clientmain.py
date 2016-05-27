@@ -26,8 +26,8 @@ def parse_arguments():#set up parsing of arguments for required arguements
 
 
 
-def connecttoserver(hostname):
-    sockettouse.connect(hostname, 12345)
+def connecttoserver(hostname,port):
+    sockettouse.connect(hostname, port)
     return sockettouse
 
 
@@ -155,7 +155,7 @@ def main():
     ip, separator, port = arguments.ho[0].rpartition(':')
     assert separator # separator (`:`) must be present
     port = int(port) # convert to integer
-    ip = ip_address(ip.strip("[]")) # convert to `IPv4Address` or `IPv6Address` 
+    ip = ip_address(ip.strip("[]")) 
     print(ip)
     print(port)
 
