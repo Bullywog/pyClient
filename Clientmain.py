@@ -46,7 +46,7 @@ def sendPrompt(prompt,sslsocket):
 
     if data==tosend:
         return True;#if prompt accepted then mirror of prompt returned
-    if data.decode('utf-8','strict') == 'ok': return True
+    if data.decode('utf-8','ignore') == 'ok': return True
     else: return False
 
 
@@ -81,25 +81,36 @@ def addFile(filename, sslsocket):
 
     return print('File not uploaded successfully')
 
+
+
 def fetchFile(filename,trustlength,trustedperson, sslsocket):
     if sendPrompt('-f '+filename,sslsocket)==False: 
         return print("File not downloaded, prompt not received or file not found")#send the prompt to the server
-    if sendPrompt(trustlength, sslsocket)==False:#sending the length of chain required to trust a file
+    if sendPrompt(str(trustlength), sslsocket)==False:#sending the length of chain required to trust a file
         return print("Trust length prompt not received")
     if sendPrompt(trustedperson, sslsocket)==False:#sending the required person to be present in the chain
         return("Trusted person prompt not found or file not trusted.")
 
     sizeprompt = sslsocket.recv(1024)   #receive size of file that will be received
-    print(sizeprompt.decode('utf-8','replace'))
+ 
+
+
     recievedfile = open(filename, 'wb') #create file on in root folder with specified name, prepared to be written to
-    size = sizeprompt.from_bytes(len(sizeprompt), 'little') #convert size of file from byte array to int
+    size=2064384 #so at the moment this is hard coded in due to trouble getting the size from server
+    
     amountreceived = 0  #Variable for tracking how much has been received through the socket.
+    sendPrompt('r', sslsocket)
     receiveddata = sslsocket.recv(1024) #Receive first chunck of data from socket
     while amountreceived < size: #While all expected data of file has not been received keep looking for more
         recievedfile.write(receiveddata)
-        amountreceived+=receiveddata.len
-        receiveddata=socket.recv(1024)
-    sendprompt('complete',sslsocket)
+        amountreceived+=len(receiveddata)
+        print(len(receiveddata))
+
+        receiveddata=sslsocket.recv(1024)
+        print(amountreceived)
+
+    recievedfile.close()
+    sendPrompt('complete',sslsocket)
     return 0
 
 
