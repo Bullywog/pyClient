@@ -8,6 +8,9 @@ from ipaddress import ip_address
 
 sockettouse = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
+securityrequirements = 0;
+namerequirements = None;
+
 
 
 def parse_arguments():#set up parsing of arguments for required arguements
@@ -72,23 +75,22 @@ def addFile(filename, sslsocket):
 
     while(data==[]):
         data = sslsocket.recv(1024)
-    if data.decode('utf-8','strict') == 'ok': return print("File Successfully Uploaded")
+    if data.decode('utf-8','ignore') == 'ok': return print("File Successfully Uploaded")
 
         
 
     return print('File not uploaded successfully')
 
 def fetchFile(filename,trustlength,trustedperson, sslsocket):
-    if sendPrompt('-f',sslsocket)==False: 
-        return print("File not downloaded prompt for fetch not processed correctly")#send the prompt to the server
-    if sendPrompt(filename, sslsocket)==False:#sending server the filename, return of prompt indicates it exists
-        return print("File not dowloaded filename not received or file not found")
+    if sendPrompt('-f '+filename,sslsocket)==False: 
+        return print("File not downloaded, prompt not received or file not found")#send the prompt to the server
     if sendPrompt(trustlength, sslsocket)==False:#sending the length of chain required to trust a file
         return print("Trust length prompt not received")
     if sendPrompt(trustedperson, sslsocket)==False:#sending the required person to be present in the chain
         return("Trusted person prompt not found or file not trusted.")
 
     sizeprompt = sslsocket.recv(1024)   #receive size of file that will be received
+    print(sizeprompt.decode('utf-8','replace'))
     recievedfile = open(filename, 'wb') #create file on in root folder with specified name, prepared to be written to
     size = sizeprompt.from_bytes(len(sizeprompt), 'little') #convert size of file from byte array to int
     amountreceived = 0  #Variable for tracking how much has been received through the socket.
@@ -159,6 +161,15 @@ def main():
     print(ip)
     print(port)
 
+    securityrequirements = 0;
+    namerequirements = 'None';
+
+    if arguments.c!=None:securityrequirements=arguments.c[0]
+    if arguments.n!=None:namerequirements=arguments.n[0]
+
+    print(securityrequirements)
+    print(namerequirements)
+
 
     if arguments.a is None and arguments.f is None and arguments.l is None and arguments.u is None and arguments.v is None:
         print('Please specify an action')
@@ -169,7 +180,7 @@ def main():
     data = sslsock.recv(1024)
     print(data)
     if arguments.a is not None: addFile(arguments.a[0], sslsock)
-    if arguments.f is not None: fetchFile(arguments.f[0],arguments.c[0],arguments.n[0],sslsock)
+    if arguments.f is not None: fetchFile(arguments.f[0],securityrequirements,namerequirements,sslsock)
     if arguments.l is not None: listFiles(sslsock)
     if arguments.u is not None: uploadCertificate(arguments.u[0],sslsock)
     #if arguments.v is not None: verifyFile(arguments.v,sslsock)
