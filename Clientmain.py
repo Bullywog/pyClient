@@ -4,6 +4,7 @@ import socket
 import ssl
 import os
 import time
+from ipaddress import ip_address
 
 sockettouse = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
@@ -62,7 +63,7 @@ def addFile(filename, sslsocket):
     sendbuffer = filetosend.read(1024) #read file into buffer
     while(sendbuffer):#while something gets read
         sent = sslsocket.send(sendbuffer)#send over sslsocket
-        print('Bytes Sent' + str(sent))#report bytes sent
+        #print('Bytes Sent' + str(sent))#report bytes sent
         sendbuffer = filetosend.read(1024)#read the next part of file to send
 
     #here should wait for a server acknowledgement that transfer is complete
@@ -151,6 +152,12 @@ def main():
     if arguments.ho is None:
         print("Please Specify a host")
         return
+    ip, separator, port = arguments.ho[0].rpartition(':')
+    assert separator # separator (`:`) must be present
+    port = int(port) # convert to integer
+    ip = ip_address(ip.strip("[]")) # convert to `IPv4Address` or `IPv6Address` 
+    print(ip)
+    print(port)
 
 
     if arguments.a is None and arguments.f is None and arguments.l is None and arguments.u is None and arguments.v is None:
@@ -158,7 +165,7 @@ def main():
         return
 
     sslsock = ssl.wrap_socket(sockettouse)
-    sslsock.connect(('localhost', 12345))
+    sslsock.connect((str(ip), port))
     data = sslsock.recv(1024)
     print(data)
     if arguments.a is not None: addFile(arguments.a[0], sslsock)
