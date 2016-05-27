@@ -57,9 +57,6 @@ def addFile(filename, sslsocket):
     if sendPrompt(str(size),sslsocket)==False:#send a file size prompt to the server
        return print("File not uploaded. Size Prompt not received correctly")
 
-    data = sslsocket.recv(1024)
-    print(data.decode('utf-8','ignore'))
-
                    
     filetosend = open(filename, 'rb') #open the file to send
     sendbuffer = filetosend.read(1024) #read file into buffer
