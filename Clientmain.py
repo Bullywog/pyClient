@@ -34,9 +34,15 @@ def connecttoserver(hostname):
 def sendPrompt(prompt,sslsocket):
     tosend = prompt.encode('utf-8')#build prompt to be sent.
     sslsocket.send(tosend)#send prompt over ssl
+
     data = sslsocket.recv(1024)#receive response
 
-    if data==tosend:return True;#if prompt accepted then mirror of prompt returned
+    while(data==[]):
+        data = sslsocket.recv(1024)
+
+    if data==tosend:
+        return True;#if prompt accepted then mirror of prompt returned
+    if data.decode('utf-8','strict') == 'ok': return True
     else: return False
 
 
@@ -45,13 +51,15 @@ def addFile(filename, sslsocket):
     if os.path.isfile(filename)==False: 
         return print("File not uploaded. File not found")
     
-    if sendPrompt('-a',sslsocket)==False:  #send the prompt, check if it is received
+    if sendPrompt('-a '+filename,sslsocket)==False:  #send the prompt, check if it is received
         return print("File not uploaded. Prompt not received correctly")
     size = os.path.getsize(filename) #determine size of the file
     if sendPrompt(str(size),sslsocket)==False:#send a file size prompt to the server
        return print("File not uploaded. Size Prompt not received correctly")
-    if sendPrompt(filename,sslsocket)==False:
-        return print("File not uploaded. Filename prompt not received correctly")
+
+    data = sslsocket.recv(1024)
+    print(data.decode('utf-8','ignore'))
+
                    
     filetosend = open(filename, 'rb') #open the file to send
     sendbuffer = filetosend.read(1024) #read file into buffer
@@ -61,9 +69,16 @@ def addFile(filename, sslsocket):
         sendbuffer = filetosend.read(1024)#read the next part of file to send
 
     #here should wait for a server acknowledgement that transfer is complete
+
+    data = sslsocket.recv(1024)#receive response
+
+    while(data==[]):
+        data = sslsocket.recv(1024)
+    if data.decode('utf-8','strict') == 'ok': return print("File Successfully Uploaded")
+
         
 
-    return 0 #return server acknoledgement
+    return print('File not uploaded successfully')
 
 def fetchFile(filename,trustlength,trustedperson, sslsocket):
     if sendPrompt('-f',sslsocket)==False: 
@@ -101,7 +116,7 @@ def listFiles(sslsocket):
         amountreceived+=receiveddata.len #Update amount received
         receiveddata = sslsocket.recv(1024)
     sendprompt('complete', sslsocket) #Inform server that process is complete
-    listoffiles=receivedstring.decode('utf-8', 'strict') #Decode the received btye array into a usable string
+    listoffiles=receivedstring.decode('utf-8', 'ignore') #Decode the received btye array into a usable string
     listitems = listoffiles.split(':') #Split string into list of different server files
     print('List of Items on Server with Protection') 
     for listitem in listitems:
@@ -154,6 +169,7 @@ def main():
     if arguments.l is not None: listFiles(sslsock)
     if arguments.u is not None: uploadCertificate(arguments.u[0],sslsock)
     #if arguments.v is not None: verifyFile(arguments.v,sslsock)
+    sendPrompt('exit',sslsock)
     sslsock.close()
 
 
